@@ -1,30 +1,67 @@
 package com.pinmi.react.printer;
 
-import com.facebook.react.ReactPackage;
+import androidx.annotation.Nullable;
+
+import com.facebook.react.TurboReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.uimanager.ViewManager;
+import com.facebook.react.module.model.ReactModuleInfo;
+import com.facebook.react.module.model.ReactModuleInfoProvider;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by xiesubin on 2017/9/21.
  */
 
-public class RNPrinterPackage implements ReactPackage {
+public class RNPrinterPackage extends TurboReactPackage {
     @Override
-    public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-        return Arrays.asList(new NativeModule[]{
-                new RNUSBPrinterModule(reactContext),
-                new RNBLEPrinterModule(reactContext),
-                new RNNetPrinterModule(reactContext),
-        });
+    public @Nullable NativeModule getModule(String name, ReactApplicationContext context) {
+        switch (name) {
+            case "RNUSBPrinter":
+                return new RNUSBPrinterModule(context);
+            case "RNBLEPrinter":
+                return new RNBLEPrinterModule(context);
+            case "RNNetPrinter":
+                return new RNNetPrinterModule(context);
+            default:
+                return null;
+        }
     }
 
     @Override
-    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-        return Collections.emptyList();
+    public ReactModuleInfoProvider getReactModuleInfoProvider() {
+        return () -> {
+            final Map<String, ReactModuleInfo> map = new HashMap<>();
+            map.put("RNUSBPrinter", new ReactModuleInfo(
+                    "RNUSBPrinter",
+                    RNUSBPrinterModule.class.getName(),
+                    false, // canOverrideExistingModule
+                    false, // needsEagerInit
+                    false, // hasConstants
+                    false, // isCxxModule
+                    false   // isTurboModule (set to true after modules are upgraded)
+            ));
+            map.put("RNBLEPrinter", new ReactModuleInfo(
+                    "RNBLEPrinter",
+                    RNBLEPrinterModule.class.getName(),
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+            ));
+            map.put("RNNetPrinter", new ReactModuleInfo(
+                    "RNNetPrinter",
+                    RNNetPrinterModule.class.getName(),
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+            ));
+            return map;
+        };
     }
 }

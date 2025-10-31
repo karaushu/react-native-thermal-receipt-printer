@@ -47,5 +47,16 @@
   },
   "author": "karaushu",
   "homepage": "https://github.com/karaushu/react-native-thermal-receipt-printer#readme",
-  "license": "ISC"
+  "license": "ISC",
+  "codegenConfig": {
+    "name": "RNPrinterSpecs",
+    "type": "all",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.pinmi.react.printer"
+    },
+    "ios": {
+      "namespace": "RNPrinterSpecs"
+    }
+  }
 }
