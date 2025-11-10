@@ -419,6 +419,15 @@ export const NetPrinter = {
 						onError(error);
 					}
 				});
+			} else if (isTurbo) {
+				// Fallback to printRawData when printHex is not available on Turbo module
+				RNNetPrinter.printRawData(processedText, { beep: true, cut: true }).catch(
+					(error: Error) => {
+						if (onError) {
+							onError(error);
+						}
+					}
+				);
 			} else {
 				RNNetPrinter.printHex(processedText, { beep: true, cut: true }, (error: Error) => {
 					if (onError) {
