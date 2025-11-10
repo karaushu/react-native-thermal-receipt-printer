@@ -4,16 +4,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    
-    <!-- USB permissions -->
-    <uses-permission android:name="android.permission.USB_PERMISSION" />
-    <uses-feature android:name="android.hardware.usb.host" android:required="true" />
-    
-    <!-- For Android 14+ explicit USB permissions -->
-    <uses-permission android:name="android.hardware.usb.host" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Remove this if not needed -->
-    <uses-permission android:name="android.hardware.usb.UsbAccessory" />
+    <!-- USB host support; permission is handled at runtime via PendingIntent on Android -->
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 
 </manifest>
