@@ -4,9 +4,15 @@ import * as EPToolkit from './utils/EPToolkit';
 import BufferHelper from './utils/buffer-helper';
 import { Buffer } from 'buffer';
 
-const RNUSBPrinter = NativeModules.RNUSBPrinter;
-const RNBLEPrinter = NativeModules.RNBLEPrinter;
-const RNNetPrinter = NativeModules.RNNetPrinter;
+import RNUSBPrinterTurbo from './NativeRNUSBPrinter';
+import RNBLEPrinterTurbo from './NativeRNBLEPrinter';
+import RNNetPrinterTurbo from './NativeRNNetPrinter';
+
+const isTurbo = RNUSBPrinterTurbo != null;
+
+const RNUSBPrinter = isTurbo ? RNUSBPrinterTurbo : NativeModules.RNUSBPrinter;
+const RNBLEPrinter = isTurbo ? RNBLEPrinterTurbo : NativeModules.RNBLEPrinter;
+const RNNetPrinter = isTurbo ? RNNetPrinterTurbo : NativeModules.RNNetPrinter;
 
 export interface PrinterOptions {
 	beep?: boolean;

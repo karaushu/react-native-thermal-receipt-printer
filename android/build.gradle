@@ -1,12 +1,13 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.facebook.react'
 
 android {
-    compileSdkVersion = 34
-    buildToolsVersion = "34.0.0"
+    namespace "com.pinmi.react.printer"
+    compileSdkVersion = 36
 
     defaultConfig {
-        minSdkVersion 23
-        targetSdkVersion 34
+        minSdkVersion 24
+        targetSdkVersion 36
         versionCode 1
         versionName "1.0"
 
