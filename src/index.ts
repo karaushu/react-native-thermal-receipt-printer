@@ -3,12 +3,16 @@ import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 import * as EPToolkit from './utils/EPToolkit';
 import BufferHelper from './utils/buffer-helper';
 import { Buffer } from 'buffer';
-
+import {
+	callNativeMethod,
+	callNativeVoid,
+	callNativeWithError,
+	callNativeWithOptions,
+	isTurbo,
+} from './utils/turbo-helpers';
 import RNUSBPrinterTurbo from './NativeRNUSBPrinter';
 import RNBLEPrinterTurbo from './NativeRNBLEPrinter';
 import RNNetPrinterTurbo from './NativeRNNetPrinter';
-
-const isTurbo = RNUSBPrinterTurbo != null;
 
 const RNUSBPrinter = isTurbo ? RNUSBPrinterTurbo : NativeModules.RNUSBPrinter;
 const RNBLEPrinter = isTurbo ? RNBLEPrinterTurbo : NativeModules.RNBLEPrinter;
@@ -100,365 +104,177 @@ const imageToBuffer = async (imagePath: string, threshold: number = 60) => {
 };
 
 export const USBPrinter = {
-	init: (): Promise<void> =>
-		isTurbo
-			? RNUSBPrinter.init()
-			: new Promise((resolve, reject) =>
-					RNUSBPrinter.init(
-						() => resolve(),
-						(error: Error) => reject(error)
-					)
-			  ),
+	init: (): Promise<void> => callNativeMethod(RNUSBPrinter.init),
 
 	getDeviceList: (): Promise<IUSBPrinter[]> =>
-		isTurbo
-			? RNUSBPrinter.getDeviceList()
-			: new Promise((resolve, reject) =>
-					RNUSBPrinter.getDeviceList(
-						(printers: IUSBPrinter[]) => resolve(printers),
-						(error: Error) => reject(error)
-					)
-			  ),
+		callNativeMethod<IUSBPrinter[]>(RNUSBPrinter.getDeviceList),
 
 	connectPrinter: (vendorId: string, productId: string): Promise<IUSBPrinter> =>
-		isTurbo
-			? RNUSBPrinter.connectPrinter(vendorId, productId)
-			: new Promise((resolve, reject) =>
-					RNUSBPrinter.connectPrinter(
-						vendorId,
-						productId,
-						(printer: IUSBPrinter) => resolve(printer),
-						(error: Error) => reject(error)
-					)
-			  ),
+		callNativeMethod<IUSBPrinter>(RNUSBPrinter.connectPrinter, vendorId, productId),
 
-	closeConn: (): Promise<void> =>
-		isTurbo
-			? RNUSBPrinter.closeConn()
-			: new Promise((resolve) => {
-					RNUSBPrinter.closeConn();
-					resolve();
-			  }),
+	closeConn: (): Promise<void> => callNativeVoid(RNUSBPrinter.closeConn),
 
 	printText: (text: string, opts: PrinterOptions = {}): void => {
-		if (isTurbo) {
-			RNUSBPrinter.printRawData(textTo64Buffer(text, opts)).catch((error: Error) =>
-				console.warn(error)
-			);
-		} else {
-			RNUSBPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) => console.warn(error));
-		}
+		callNativeWithError(
+			RNUSBPrinter.printRawData,
+			(error: Error) => console.warn(error),
+			textTo64Buffer(text, opts)
+		);
 	},
 
 	printBill: (text: string, opts: PrinterOptions = {}): void => {
-		if (isTurbo) {
-			RNUSBPrinter.printRawData(billTo64Buffer(text, opts)).catch((error: Error) =>
-				console.warn(error)
-			);
-		} else {
-			RNUSBPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) => console.warn(error));
-		}
+		callNativeWithError(
+			RNUSBPrinter.printRawData,
+			(error: Error) => console.warn(error),
+			billTo64Buffer(text, opts)
+		);
 	},
 
 	printRawData: (data: Uint8Array, onError: (error: Error) => void = () => {}) => {
-		if (isTurbo) {
-			RNUSBPrinter.printRawData(bytesToString(data, 'base64')).catch((error: Error) => {
-				if (onError) {
-					onError(error);
-				}
-			});
-		} else {
-			RNUSBPrinter.printRawData(bytesToString(data, 'base64'), (error: Error) => {
-				if (onError) {
-					onError(error);
-				}
-			});
-		}
+		callNativeWithError(RNUSBPrinter.printRawData, onError, bytesToString(data, 'base64'));
 	},
 
 	printImage: async (imagePath: string) => {
 		const tmp = await imageToBuffer(imagePath);
-		if (isTurbo) {
-			RNUSBPrinter.printRawData(tmp).catch((error: Error) => console.warn(error));
-		} else {
-			RNUSBPrinter.printRawData(tmp, (error: Error) => console.warn(error));
-		}
+		callNativeWithError(RNUSBPrinter.printRawData, (error: Error) => console.warn(error), tmp);
 	},
 };
 
 export const BLEPrinter = {
-	init: (): Promise<void> =>
-		isTurbo
-			? RNBLEPrinter.init()
-			: new Promise((resolve, reject) =>
-					RNBLEPrinter.init(
-						() => resolve(),
-						(error: Error) => reject(error)
-					)
-			  ),
+	init: (): Promise<void> => callNativeMethod(RNBLEPrinter.init),
 
 	getDeviceList: (): Promise<IBLEPrinter[]> =>
-		isTurbo
-			? RNBLEPrinter.getDeviceList()
-			: new Promise((resolve, reject) =>
-					RNBLEPrinter.getDeviceList(
-						(printers: IBLEPrinter[]) => resolve(printers),
-						(error: Error) => reject(error)
-					)
-			  ),
+		callNativeMethod<IBLEPrinter[]>(RNBLEPrinter.getDeviceList),
 
 	connectPrinter: (inner_mac_address: string): Promise<IBLEPrinter> =>
-		isTurbo
-			? RNBLEPrinter.connectPrinter(inner_mac_address)
-			: new Promise((resolve, reject) =>
-					RNBLEPrinter.connectPrinter(
-						inner_mac_address,
-						(printer: IBLEPrinter) => resolve(printer),
-						(error: Error) => reject(error)
-					)
-			  ),
+		callNativeMethod<IBLEPrinter>(RNBLEPrinter.connectPrinter, inner_mac_address),
 
-	closeConn: (): Promise<void> =>
-		isTurbo
-			? RNBLEPrinter.closeConn()
-			: new Promise((resolve) => {
-					RNBLEPrinter.closeConn();
-					resolve();
-			  }),
+	closeConn: (): Promise<void> => callNativeVoid(RNBLEPrinter.closeConn),
 
 	printText: (text: string, opts: PrinterOptions = {}): void => {
 		if (Platform.OS === 'ios') {
 			const processedText = textPreprocessingIOS(text);
-			if (isTurbo) {
-				RNBLEPrinter.printRawData(processedText.text, processedText.opts).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNBLEPrinter.printRawData(processedText.text, processedText.opts, (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithOptions(
+				RNBLEPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				processedText.text,
+				processedText.opts
+			);
 		} else {
-			if (isTurbo) {
-				RNBLEPrinter.printRawData(textTo64Buffer(text, opts)).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNBLEPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithError(
+				RNBLEPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				textTo64Buffer(text, opts)
+			);
 		}
 	},
 
 	printBill: (text: string, opts: PrinterOptions = {}): void => {
 		if (Platform.OS === 'ios') {
 			const processedText = textPreprocessingIOS(text);
-			if (isTurbo) {
-				RNBLEPrinter.printRawData(processedText.text, processedText.opts).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNBLEPrinter.printRawData(processedText.text, processedText.opts, (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithOptions(
+				RNBLEPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				processedText.text,
+				processedText.opts
+			);
 		} else {
-			if (isTurbo) {
-				RNBLEPrinter.printRawData(billTo64Buffer(text, opts)).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNBLEPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithError(
+				RNBLEPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				billTo64Buffer(text, opts)
+			);
 		}
 	},
 
 	printRawData: (data: Uint8Array, onError: (error: Error) => void = () => {}) => {
 		if (Platform.OS === 'ios') {
 			const processedText = bytesToString(data, 'hex');
-			if (isTurbo) {
-				RNBLEPrinter.printHex(processedText, { beep: true, cut: true }).catch((error: Error) => {
-					if (onError) {
-						onError(error);
-					}
-				});
-			} else {
-				RNBLEPrinter.printHex(processedText, { beep: true, cut: true }, (error: Error) => {
-					if (onError) {
-						onError(error);
-					}
-				});
-			}
+			callNativeWithOptions(RNBLEPrinter.printHex, onError, processedText, {
+				beep: true,
+				cut: true,
+			});
 		} else {
-			if (isTurbo) {
-				RNBLEPrinter.printRawData(bytesToString(data, 'base64')).catch((error: Error) => {
-					if (onError) {
-						onError(error);
-					}
-				});
-			} else {
-				RNBLEPrinter.printRawData(bytesToString(data, 'base64'), (error: Error) => {
-					if (onError) {
-						onError(error);
-					}
-				});
-			}
+			callNativeWithError(RNBLEPrinter.printRawData, onError, bytesToString(data, 'base64'));
 		}
 	},
 
 	printImage: async (imagePath: string) => {
 		const tmp = await imageToBuffer(imagePath);
-		if (isTurbo) {
-			RNBLEPrinter.printRawData(tmp).catch((error: Error) => console.warn(error));
-		} else {
-			RNBLEPrinter.printRawData(tmp, (error: Error) => console.warn(error));
-		}
+		callNativeWithError(RNBLEPrinter.printRawData, (error: Error) => console.warn(error), tmp);
 	},
 };
 
 export const NetPrinter = {
-	init: (): Promise<void> =>
-		isTurbo
-			? RNNetPrinter.init()
-			: new Promise((resolve, reject) =>
-					RNNetPrinter.init(
-						() => resolve(),
-						(error: Error) => reject(error)
-					)
-			  ),
+	init: (): Promise<void> => callNativeMethod(RNNetPrinter.init),
 
 	getDeviceList: (): Promise<INetPrinter[]> =>
-		isTurbo
-			? RNNetPrinter.getDeviceList()
-			: new Promise((resolve, reject) =>
-					RNNetPrinter.getDeviceList(
-						(printers: INetPrinter[]) => resolve(printers),
-						(error: Error) => reject(error)
-					)
-			  ),
+		callNativeMethod<INetPrinter[]>(RNNetPrinter.getDeviceList),
 
 	connectPrinter: (host: string, port: number): Promise<INetPrinter> =>
-		isTurbo
-			? RNNetPrinter.connectPrinter(host, port)
-			: new Promise((resolve, reject) =>
-					RNNetPrinter.connectPrinter(
-						host,
-						port,
-						(printer: INetPrinter) => resolve(printer),
-						(error: Error) => reject(error)
-					)
-			  ),
+		callNativeMethod<INetPrinter>(RNNetPrinter.connectPrinter, host, port),
 
-	closeConn: (): Promise<void> =>
-		isTurbo
-			? RNNetPrinter.closeConn()
-			: new Promise((resolve) => {
-					RNNetPrinter.closeConn();
-					resolve();
-			  }),
+	closeConn: (): Promise<void> => callNativeVoid(RNNetPrinter.closeConn),
 
 	printText: (text: string, opts = {}): void => {
 		if (Platform.OS === 'ios') {
 			const processedText = textPreprocessingIOS(text);
-			if (isTurbo) {
-				RNNetPrinter.printRawData(processedText.text, processedText.opts).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNNetPrinter.printRawData(processedText.text, processedText.opts, (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithOptions(
+				RNNetPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				processedText.text,
+				processedText.opts
+			);
 		} else {
-			if (isTurbo) {
-				RNNetPrinter.printRawData(textTo64Buffer(text, opts)).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNNetPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithError(
+				RNNetPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				textTo64Buffer(text, opts)
+			);
 		}
 	},
 
 	printBill: (text: string, opts = {}): void => {
 		if (Platform.OS === 'ios') {
 			const processedText = textPreprocessingIOS(text);
-			if (isTurbo) {
-				RNNetPrinter.printRawData(processedText.text, processedText.opts).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNNetPrinter.printRawData(processedText.text, processedText.opts, (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithOptions(
+				RNNetPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				processedText.text,
+				processedText.opts
+			);
 		} else {
-			if (isTurbo) {
-				RNNetPrinter.printRawData(billTo64Buffer(text, opts)).catch((error: Error) =>
-					console.warn(error)
-				);
-			} else {
-				RNNetPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) =>
-					console.warn(error)
-				);
-			}
+			callNativeWithError(
+				RNNetPrinter.printRawData,
+				(error: Error) => console.warn(error),
+				billTo64Buffer(text, opts)
+			);
 		}
 	},
 
 	printRawData: (data: Uint8Array, onError: (error: Error) => void = () => {}) => {
 		if (Platform.OS === 'ios') {
 			const processedText = bytesToString(data, 'hex');
-			if (isTurbo && RNNetPrinter.printHex) {
-				RNNetPrinter.printHex(processedText, { beep: true, cut: true }).catch((error: Error) => {
-					if (onError) {
-						onError(error);
-					}
+			if (RNNetPrinter.printHex) {
+				callNativeWithOptions(RNNetPrinter.printHex, onError, processedText, {
+					beep: true,
+					cut: true,
 				});
-			} else if (isTurbo) {
-				// Fallback to printRawData when printHex is not available on Turbo module
-				RNNetPrinter.printRawData(processedText, { beep: true, cut: true }).catch(
-					(error: Error) => {
-						if (onError) {
-							onError(error);
-						}
-					}
-				);
 			} else {
-				RNNetPrinter.printHex(processedText, { beep: true, cut: true }, (error: Error) => {
-					if (onError) {
-						onError(error);
-					}
+				// Fallback to printRawData when printHex is not available on Turbo module
+				callNativeWithOptions(RNNetPrinter.printRawData, onError, bytesToString(data, 'base64'), {
+					beep: true,
+					cut: true,
 				});
 			}
 		} else {
-			if (isTurbo) {
-				RNNetPrinter.printRawData(bytesToString(data, 'base64')).catch((error: Error) => {
-					if (onError) {
-						onError(error);
-					}
-				});
-			} else {
-				RNNetPrinter.printRawData(bytesToString(data, 'base64'), (error: Error) => {
-					if (onError) {
-						onError(error);
-					}
-				});
-			}
+			callNativeWithError(RNNetPrinter.printRawData, onError, bytesToString(data, 'base64'));
 		}
 	},
 
 	printImage: async (imagePath: string) => {
 		const tmp = await imageToBuffer(imagePath);
-		if (isTurbo) {
-			RNNetPrinter.printRawData(tmp).catch((error: Error) => console.warn(error));
-		} else {
-			RNNetPrinter.printRawData(tmp, (error: Error) => console.warn(error));
-		}
+		callNativeWithError(RNNetPrinter.printRawData, (error: Error) => console.warn(error), tmp);
 	},
 };
 

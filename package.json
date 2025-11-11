@@ -1,6 +1,6 @@
 {
 	"name": "choiceqr-react-native-thermal-printer",
-	"version": "2.0.5",
+	"version": "2.1.0",
 	"description": "Fork of react-native-thermal-receipt-printer which is fork of react-native-printer. A React Native Library to support USB/BLE/Net printer",
 	"main": "dist/index.js",
 	"source": "dist/index.js",
