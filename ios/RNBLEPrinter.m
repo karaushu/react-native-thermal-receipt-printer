@@ -39,20 +39,29 @@ RCT_EXPORT_METHOD(init:(RCTResponseSenderBlock)successCallback
     m_printer = nil;
 }
 
+// How long getDeviceList scans before it answers; a callback can only be called once.
+static const NSTimeInterval kScanWindowSeconds = 3.0;
+
 RCT_EXPORT_METHOD(getDeviceList:(RCTResponseSenderBlock)successCallback
                   fail:(RCTResponseSenderBlock)errorCallback) {
     @try {
         !_printerArray ? [NSException raise:@"Null pointer exception" format:@"Must call init function first"] : nil;
+        NSMutableArray *printerArray = _printerArray;
         [[PrinterSDK defaultPrinterSDK] scanPrintersWithCompletion:^(Printer* printer){
-            [_printerArray addObject:printer];
-            NSMutableArray *mapped = [NSMutableArray arrayWithCapacity:[_printerArray count]];
-            [_printerArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-                NSDictionary *dict = @{ @"device_name" : printer.name, @"inner_mac_address" : printer.UUIDString};
-                [mapped addObject:dict];
-            }];
-            NSMutableArray *uniquearray = (NSMutableArray *)[[NSSet setWithArray:mapped] allObjects];;
-            successCallback(@[uniquearray]);
+            dispatch_async(dispatch_get_main_queue(), ^{
+                for (Printer *known in printerArray) {
+                    if ([known.UUIDString isEqualToString:printer.UUIDString]) return;
+                }
+                [printerArray addObject:printer];
+            });
         }];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(kScanWindowSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            NSMutableArray *mapped = [NSMutableArray arrayWithCapacity:[printerArray count]];
+            for (Printer *printer in printerArray) {
+                [mapped addObject:@{ @"device_name" : printer.name ?: @"", @"inner_mac_address" : printer.UUIDString ?: @"" }];
+            }
+            successCallback(@[mapped]);
+        });
     } @catch (NSException *exception) {
         errorCallback(@[exception.reason]);
     }
